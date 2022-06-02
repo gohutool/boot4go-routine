@@ -26,7 +26,7 @@ type Options struct {
 
 	// Max number of goroutine blocking on pool.Submit.
 	// 0 (default value) means no such limit.
-	MaxWorkersCount int
+	MaxWorkersCount uint32
 
 	LogAllErrors bool
 }
@@ -61,7 +61,7 @@ func WithLogAllErrors(logAllErrors bool) Option {
 }
 
 // WithMaxWorkersCount sets up the maximum number of goroutines that are blocked when it reaches the capacity of pool.
-func WithMaxWorkersCount(maxWorkersCount int) Option {
+func WithMaxWorkersCount(maxWorkersCount uint32) Option {
 	return func(opts *Options) {
 		opts.MaxWorkersCount = maxWorkersCount
 	}

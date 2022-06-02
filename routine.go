@@ -34,12 +34,12 @@ type workerChan[T any] struct {
 
 // Such a scheme keeps CPU caches hot (in theory).
 type workerPool[T any] struct {
-	MaxWorkersCount       int
+	MaxWorkersCount       uint32
 	LogAllErrors          bool
 	MaxIdleWorkerDuration time.Duration
 
 	lock         sync.Mutex
-	workersCount int
+	workersCount uint32
 	mustStop     bool
 
 	ready  []*workerChan[T]
