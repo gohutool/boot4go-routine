@@ -256,7 +256,7 @@ func (wp *workerPool[T]) workerFunc(ch *workerChan[T]) {
 	var err error
 	for workerfunc = range ch.ch {
 		// when stop workpool will put nil to chan
-		if workerfunc == nil {
+		if workerfunc == nil || wp.mustStop {
 			Logger.Debug("Be stopped in work pool")
 			break
 		}
