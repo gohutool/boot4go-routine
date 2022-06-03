@@ -1,7 +1,6 @@
 package routine
 
 import (
-	"fmt"
 	"github.com/gohutool/log4go"
 	"runtime"
 	"sync"
@@ -249,7 +248,7 @@ func (wp *workerPool[T]) getCh() *workerChan[T] {
 		}()
 	}
 
-	fmt.Printf("workChain's address %p\n", ch)
+	//fmt.Printf("workChain's address %p\n", ch)
 
 	return ch
 }
