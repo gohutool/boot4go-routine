@@ -188,15 +188,19 @@ func (wp *workerPool[T]) clean(scratch *[]*workerChan[T]) {
 }
 
 func (wp *workerPool[T]) purgePeriodically() {
-	heartbeat := time.NewTicker(wp.GetMaxIdleWorkerDuration())
-	defer heartbeat.Stop()
+	if wp.MaxIdleWorkerDuration > 0 {
 
-	for range heartbeat.C {
-		if wp.stopCh == nil {
-			break
+		heartbeat := time.NewTicker(wp.GetMaxIdleWorkerDuration())
+		defer heartbeat.Stop()
+
+		for range heartbeat.C {
+			if wp.stopCh == nil {
+				break
+			}
+			var expired []*workerChan[T]
+			wp.clean(&expired)
 		}
-		var expired []*workerChan[T]
-		wp.clean(&expired)
+
 	}
 }
 
