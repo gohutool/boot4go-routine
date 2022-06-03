@@ -65,7 +65,7 @@ func NewPool[T any](options ...Option) (*workerPool[T], error) {
 	opts := LoadOptions(options...)
 
 	if expiry := opts.MaxIdleWorkerDuration; expiry < 0 {
-		return nil, ErrInvalidMaxIdle
+		//return nil, ErrInvalidMaxIdle
 	} else if expiry == 0 {
 		opts.MaxIdleWorkerDuration = DefaultCleanIntervalTime
 	}
