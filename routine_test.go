@@ -84,3 +84,63 @@ func TestRoutine(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 }
+
+func TestCyclicDistributionEventChain(t *testing.T) {
+	var n uint64 = 18446744073709551615
+	fmt.Println(n + 1)
+
+	var wg sync.WaitGroup
+	cyclic := 10
+
+	doLoop := 10
+	clientCount := 100
+	taskCount := doLoop * clientCount
+
+	wg.Add(taskCount)
+
+	c := NewCyclicDistributionEventChain[string](cyclic)
+
+	c.Start(EventHander[string](func(ch EventChannel[string], t *string) error {
+		fmt.Printf("EventChannel[%v] %v\n", ch.ID(), *t)
+		wg.Done()
+		return nil
+	}))
+
+	//channelMap := make(map[int]*EventChannel[int])
+
+	go func() {
+		for idx := 0; idx < clientCount; idx++ {
+
+			go func(clientId int) {
+				channel, _ := c.BorrowOne()
+
+				for j := 0; j < doLoop; j++ {
+					str := fmt.Sprintf("ClientID[%v]==>%v", idx, j)
+
+					channel.AddEvent(&str)
+				}
+
+				c.ReturnOne(channel)
+
+			}(idx)
+
+		}
+
+		reportMetrics := c.ReportMetrics()
+		fmt.Printf("After Metrics: \n %+v\n", reportMetrics)
+	}()
+
+	reportMetrics := c.ReportMetrics()
+	fmt.Printf("Metrics: \n %+v\n", reportMetrics)
+	wg.Wait()
+
+	reportMetrics = c.ReportMetrics()
+	fmt.Printf("Metrics: \n %+v\n", reportMetrics)
+	c.Stop()
+	time.Sleep(1 * time.Second)
+
+	reportMetrics = c.ReportMetrics()
+	fmt.Printf("Metrics: \n %+v\n", reportMetrics)
+
+	fmt.Println("Over")
+}

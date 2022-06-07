@@ -31,6 +31,31 @@ type workerChan[T any] struct {
 	ch          chan WorkerFunc
 }
 
+type WorkPoolMetrics struct {
+	MaxWorkersCount       uint32        `json:"max_workers_count,omitempty"`
+	LogAllErrors          bool          `json:"log_all_errors,omitempty"`
+	MaxIdleWorkerDuration time.Duration `json:"max_idle_worker_duration,omitempty"`
+	workersCount          uint32        `json:"workers_count,omitempty"`
+	Ready                 int           `json:"ready,omitempty"`
+	GetTimes              uint64        `json:"get_times,omitempty"`
+	PurgeTimes            uint64        `json:"purge_times,omitempty"`
+}
+
+func (wp *workerPool[T]) ReportMetrics() WorkPoolMetrics {
+
+	var ready []*workerChan[T] = wp.ready
+
+	return WorkPoolMetrics{
+		MaxWorkersCount:       wp.MaxWorkersCount,
+		LogAllErrors:          wp.LogAllErrors,
+		MaxIdleWorkerDuration: wp.MaxIdleWorkerDuration,
+		workersCount:          wp.workersCount,
+		Ready:                 len(ready),
+		GetTimes:              wp.getTimes,
+		PurgeTimes:            wp.purgeTimes,
+	}
+}
+
 // Such a scheme keeps CPU caches hot (in theory).
 type workerPool[T any] struct {
 	MaxWorkersCount       uint32
@@ -45,6 +70,9 @@ type workerPool[T any] struct {
 	stopCh chan struct{}
 
 	workerChanPool sync.Pool
+
+	getTimes   uint64
+	purgeTimes uint64
 }
 
 var workerChanCap = func() int {
@@ -173,6 +201,7 @@ func (wp *workerPool[T]) clean(scratch *[]*workerChan[T]) {
 		ready[i] = nil
 	}
 	wp.ready = ready[:m]
+	wp.purgeTimes = wp.purgeTimes + uint64(len(*scratch))
 	wp.lock.Unlock()
 
 	// Notify obsolete workers to stop.
@@ -221,6 +250,7 @@ func (wp *workerPool[T]) getCh() *workerChan[T] {
 	createWorker := false
 
 	wp.lock.Lock()
+	wp.getTimes = wp.getTimes + 1
 	var ready []*workerChan[T] = wp.ready
 	n := len(ready) - 1
 	if n < 0 {
