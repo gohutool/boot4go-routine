@@ -45,7 +45,7 @@ func (jc *EventChannel[T]) reset() {
 	jc.c = nil
 }
 
-type cyclicEventChainReportMetric struct {
+type CyclicEventChainReportMetric struct {
 	PoolSize          int    `json:"pool_size,omitempty"`
 	Actives           []bool `json:"actives,omitempty"`
 	NumClients        []int  `json:"num_clients,omitempty"`
@@ -53,14 +53,14 @@ type cyclicEventChainReportMetric struct {
 	Started           bool   `json:"started,omitempty"`
 }
 
-func (tp *cyclicDistributionEventChain[T]) ReportMetrics() cyclicEventChainReportMetric {
+func (tp *CyclicDistributionEventChain[T]) ReportMetrics() CyclicEventChainReportMetric {
 	Actives := make([]bool, tp.poolSize)
 
 	for i, j := range tp.jobChan {
 		Actives[i] = j.c != nil
 	}
 
-	return cyclicEventChainReportMetric{
+	return CyclicEventChainReportMetric{
 		PoolSize:          tp.poolSize,
 		Actives:           Actives,
 		NumClients:        tp.chanClient[0:],
@@ -69,17 +69,17 @@ func (tp *cyclicDistributionEventChain[T]) ReportMetrics() cyclicEventChainRepor
 	}
 }
 
-func NewCyclicDistributionEventChain[T any](cyclicSize int) *cyclicDistributionEventChain[T] {
+func NewCyclicDistributionEventChain[T any](cyclicSize int) *CyclicDistributionEventChain[T] {
 	if cyclicSize <= 0 {
 		cyclicSize = 1000
 
 	}
-	return &cyclicDistributionEventChain[T]{
+	return &CyclicDistributionEventChain[T]{
 		poolSize: cyclicSize,
 	}
 }
 
-type cyclicDistributionEventChain[T any] struct {
+type CyclicDistributionEventChain[T any] struct {
 	mu              sync.Mutex
 	poolSize        int
 	jobChan         []EventChannel[T]
@@ -90,7 +90,7 @@ type cyclicDistributionEventChain[T any] struct {
 
 type EventHander[T any] func(job EventChannel[T], t *T) error
 
-func (tp *cyclicDistributionEventChain[T]) Start(eventHandler EventHander[T]) {
+func (tp *CyclicDistributionEventChain[T]) Start(eventHandler EventHander[T]) {
 	tp.Stop()
 
 	tp.mu.Lock()
@@ -133,7 +133,7 @@ func (tp *cyclicDistributionEventChain[T]) Start(eventHandler EventHander[T]) {
 	tp.started = true
 }
 
-func (tp *cyclicDistributionEventChain[T]) findMaxAndMin() (int, int) {
+func (tp *CyclicDistributionEventChain[T]) findMaxAndMin() (int, int) {
 	var max int = 0
 	var min int = len(tp.chanClient)
 
@@ -162,7 +162,7 @@ func (tp *cyclicDistributionEventChain[T]) findMaxAndMin() (int, int) {
 	return max, min
 }
 
-func (tp *cyclicDistributionEventChain[T]) Stop() {
+func (tp *CyclicDistributionEventChain[T]) Stop() {
 	tp.mu.Lock()
 	defer tp.mu.Unlock()
 	var jc []EventChannel[T] = tp.jobChan
@@ -174,7 +174,7 @@ func (tp *cyclicDistributionEventChain[T]) Stop() {
 	tp.started = false
 }
 
-func (tp *cyclicDistributionEventChain[T]) BorrowOne() (*EventChannel[T], error) {
+func (tp *CyclicDistributionEventChain[T]) BorrowOne() (*EventChannel[T], error) {
 	tp.mu.Lock()
 
 	var rtn *EventChannel[T]
@@ -214,7 +214,7 @@ func (tp *cyclicDistributionEventChain[T]) BorrowOne() (*EventChannel[T], error)
 	return rtn, nil
 }
 
-func (tp *cyclicDistributionEventChain[T]) ReturnOne(jc *EventChannel[T]) error {
+func (tp *CyclicDistributionEventChain[T]) ReturnOne(jc *EventChannel[T]) error {
 	if jc == nil {
 		return NullJobChan
 	}
